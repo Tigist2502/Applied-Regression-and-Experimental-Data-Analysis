@@ -1,0 +1,329 @@
+---
+title: 'MA717: Applied Regression and Experimental Data Analysis'
+author: "Assignment template "
+date: " "
+output:
+  pdf_document: default
+  word_document: default
+  html_document:
+    df_print: paged
+---
+
+
+\textbf{Task 1: Data reading and simple exploration (25$\%$)}
+
+1.1. Read "College.csv" file into R with following command and use dim() and head() to check if you read the data correct. You should report the number of observations and the number of variables. **(5 $\%$)**
+
+```{r, eval=TRUE}
+#read the data
+mydata<-read.csv("College.csv", header=T, stringsAsFactors=TRUE)
+
+#dimension of the data
+dim(mydata)
+
+# the first six observation of the data are:-
+head(mydata)
+
+```
+Answer:-
+**The  sample size(number of observations) of the "college.csv" data is  775 and the number of variables are 17**
+
+
+1.2. Use your registration number as random seed, generate a random subset of College data with sample size 700, name this new data as mynewdata. Use summary() to output the summarized information about mynewdata. Please report the number of private and public university and the number of Elite university and non-Elite university in this new data. **(12 $\%$)** 
+
+```{r, eval=TRUE}
+# Setup random seeds by using the  registration number
+set.seed(2401004)
+
+#Use sample() function to generate a random index with size=700
+index<-sample(nrow(mydata), size=700)
+
+#random subset of College data with sample size 700
+mynewdata<-mydata[index, ]
+
+#summerized information of "mynewdata"
+summary(mynewdata)
+
+# Number of private and public universities
+table(mynewdata$Private)
+
+# Number of Elite and non-Elite universities
+table(mynewdata$Elite)
+
+
+```
+Answer:-
+**The Private variable is categorical with two categories: "Yes" (private universities) and "No" (public universities).There are 512 private universities and 188 public universities in the dataset.**
+
+**The Elite variable is categorical with two categories: "Yes" (elite universities) and "No" (non-elite universities).There are 72 elite universities and 628 non-elite universities.**
+
+
+1.3. Use mynewdata, plot histogram plots of four variables "Outstate", "Room.Board", "Books" and "Personal". Give each plot a suitable title and label for x axis and y axis. **(8$\%$)**
+
+```{r, eval=TRUE}
+# Setting a 2 by 2 plotting area
+par(mfrow = c(2, 2))
+
+# Plot histogram for Outstate
+hist(mynewdata$Outstate, 
+     main = "Histogram of outstate by frequency", 
+     xlab = "Outstate", 
+     ylab = "Frequency", 
+     col = "lightblue", 
+     border = "black")
+
+# Plot histogram for Room.Board
+hist(mynewdata$Room.Board, 
+     main = "Histogram of Room.Board by frequency", 
+     xlab = "Room.Board", 
+     ylab = "Frequency", 
+     col = "lightgreen", 
+     border = "black")
+
+# Plot histogram for Books
+hist(mynewdata$Books, 
+     main = "Histogram of Books by Frequency", 
+     xlab = "Books", 
+     ylab = "Frequency", 
+     col = "lightcoral", 
+     border = "black")
+
+# Plot histogram for Personal
+hist(mynewdata$Personal, 
+     main = "Histogram of Personal by Frequency", 
+     xlab = "Personal", 
+     ylab = "Frequency", 
+     col = "lightyellow", 
+     border = "black")
+
+
+```
+
+\textbf{Task 2: Linear regression (45$\%$)}
+
+2.1. Use mynewdata, do a linear regression fitting when outcome is "Grad.Rate" and predictors are "Private" and "Elite". Show the R output and report what you have learned from this output (you need to discuss significance, adjusted R-squared and p-value of F-statistics). **(6$\%$)**. 
+
+```{r, eval=TRUE}
+# Fit a linear regression model using lm()
+model <- lm(Grad.Rate ~ Private + Elite, data = mynewdata)
+
+# Show the summary of the model
+summary(model)
+
+```
+Answer:-
+**The p-value for Private and Elite are both less than 2e-16 which is smaller than 0.05, it means both predictors are statistically significant at the 5percent significance level.**
+
+
+**The Adjusted R-squared is 0.2191 , which indicates that about 21.91percent of the variance in Grad.Rate is explained by Private and Elite combined. This is low, suggesting that other factors not included in the model might be influencing Grad.Rate.**
+
+**The F-statistic (99.08) and its p-value (2.2e-16) are significant (p-value < 0.05), which suggests that the model overall is statistically significant, i.e., both the predictors (Private or Elite) has a significant effect on Grad.Rate.**
+
+**To sum up,The Private and Elite variables both have significant effects on the graduation rate (Grad.Rate), as indicated by the low p-values.The adjusted R-squared value indicates that the model explains only a small portion of the variability in graduation rates, implying that other factors may also influence graduation rates.The F-statistic shows that the overall model is statistically significant.**
+
+
+2.2. Use the linear regression fitting result in 2.1, calculate the confidence intervals for the coefficients. Also give the prediction interval of "Grad.Rate" for a new data with Private="Yes" and Elite="No". **(4$\%$)**
+
+```{r, eval=TRUE}
+# confidence intervals for the coefficients
+confint(model)
+
+# New data point for prediction
+new_data <- data.frame(Private = "Yes", Elite = "No")
+
+# Prediction interval for Grad.Rate
+predict(model, newdata = new_data, interval = "prediction", level = 0.95)
+
+```
+Answer:-
+**Intercept: The confidence interval for the intercept is between 52.6267 and 56.99. This means that, for a university that is both private and non-elite, the expected graduation rate (Grad.Rate) is likely to fall between 52.667 percent and 56.99 percent.**
+
+**PrivateYes: The confidence interval for the effect of being a private university is between 9.30 and 14.399. This means that private universities are expected to have a graduation rate that is between 9.30percent and 14.399percent higher than public universities.**
+
+**EliteYes: The confidence interval for the effect of being an elite university is between 15.15 and 22.58. This means that elite universities are expected to have a graduation rate that is between 15.15percent and 22.58percent higher than non-elite universities.**
+
+
+
+2.3 Use mynewdata, do a multiple linear regression fitting when outcome is "Grad.Rate", all other variables as predictors. Show the R output and report what you have learned from this output (you need to discuss significance, adjusted R-squared and p-value of F-statistics). Is linear regression model in 2.3 better than linear regression in 2.1? Use ANOVA to justify your conclusion. **(14\%)** 
+
+```{r, eval=TRUE}
+
+# Fit the multiple linear regression model
+mlm_model <- lm(Grad.Rate ~ ., data = mynewdata)
+
+# Display the summary of the model
+summary(mlm_model)
+
+
+```
+Answer:-
+**The residual standard error is 12.77, which is the average distance that the observed values fall from the regression line. Compared to the simple model in 2.1, this is lower, indicating an improved fit.**
+
+
+**"S.F.Ratio" ,"Books ","F.Undergrad","Accept","Enroll","Terminal" have p value of greater than 0.05 therefore they are insignificant**
+
+**The p-value for others are less  than 0.05, it means the predictors are statistically significant at the 5percent significance level.**
+
+**The model explains about 44.7percent of the variability in Grad.Rate, accounting for the number of predictors. This is significantly better than the simpler linear model (adjusted R-squared =0.219).**
+
+**The F-statistic (36.31) and its p-value (2.2e-16) the overall model is statistically significant, meaning the predictors collectively explain a significant portion of the variance in Grad.Rate.**
+```{r, eval=TRUE}
+# Compare the two models using ANOVA
+anova(model, mlm_model)
+
+```
+Answer:-
+**The ANOVA results show a p-value < 2.2e-16, meaning the additional predictors in multiple linear regression model significantly improve the fit compared to the simple model.**
+
+**The difference in degrees of freedom is 14, corresponding to the additional 14 predictors in the multiple linear regression model.**
+
+**The reduction in RSS (49,073) indicates that the multiple linear regression model explains substantially more variability in the outcome (Grad.Rate).**
+
+**The F-statistic is 21.511, which tests whether the additional predictors in the multiple linear regression significantly improve the model fit compared to simple Model.**
+
+**To sumup the multiple linear regression is better suited for understanding the factors affecting Grad.Rate.**
+
+
+2.4. Use the diagnostic plots to look at the fitting of multiple linear regression in 2.3. Please comment what you have seen from those plots. **(7\%)** 
+
+```{r, eval=TRUE}
+# Diagnostic plots for multiple linear regression model
+plot(mlm_model)
+
+```
+Answer:-
+**Findings from diagnostics plot for multiple linear regression the residual plot and scale-location show similar pattern that there may exist non-linearity of outcome with some predictors. The QQ plot shows the normal distribution assumption for residuals is not fully satisfied in tail and the leverage plot indicates there are some high influence (high leverage) points. Overall, the diagnostics plot for multiple linear regression show the performance of multiple linear regression fitting is better than the fitting of simple linear regression.**
+
+
+
+2.5. Use mynewdata, do a variable selection to choose the best model. You should use plots to justify how do you choose your best model. Use the selected predictors of your best model with outcome "Grad.Rate", do a linear regression fitting and plot the diagnostic plots for this fitting. You can use either exhaustive, or forward, or backward selection method. **(14\%)**
+
+
+```{r}
+#Variable selection using exhaustive search
+#load library leaps to do selection
+library(leaps)
+#see the dimention of the data
+dim(mynewdata)
+# check if there is missing value. 
+sum(is.na(mynewdata)) # no missing values 
+
+#use regsubsets() to fit the models 
+mlm_model.regsub<-regsubsets(Grad.Rate ~ ., data = mynewdata, nvmax=16)
+summary(mlm_model.regsub)
+
+mlm_model.sum<-summary(mlm_model.regsub)
+names(mlm_model.sum)
+
+par(mfrow=c(2,2))
+#check which model gives the maximum adjusted R-squared
+which.max(mlm_model.sum$adjr2)
+
+#check which model gives the minimum cp
+which.min(mlm_model.sum$cp)
+
+#check which model gives the minimum cp
+which.min(mlm_model.sum$bic)
+
+```
+
+```{r}
+# plot adjusted R-square and maximum point
+plot(mlm_model.sum$adjr2, xlab="Variable number", ylab="Adjust R-squared", type="l")
+which.max(mlm_model.sum$adjr2) # adjr2 is the largest when variable number is 12. 
+points(12, mlm_model.sum$adjr2[12], col="red", cex=2, pch=20)
+
+# plot cp and minimum point
+plot(mlm_model.sum$cp, xlab="Variable number", ylab="Cp", type="l")
+which.min(mlm_model.sum$cp) # cp is the smallest when variable number is 11. 
+points(11, mlm_model.sum$cp[11], col="red", cex=2, pch=20)
+
+
+# plot BIC and minimum point
+plot(mlm_model.sum$bic, xlab="Variable number", ylab="BIC", type="l")
+which.min(mlm_model.sum$bic) # BIC is the smallest when variable number is 6. 
+points(6, mlm_model.sum$bic[6], col="red", cex=2, pch=20)
+
+# I want to compare the adjusted r2 for BIC,CP before deciding the number of variables
+coef(mlm_model.regsub, 6)# BIC selection
+
+```
+Answer:-
+**From the graph of RSS, the plot decreasing until 12 variables suggests that adding variables up to this point reduces the residual error.However, minimizing RSS alone can lead to overfitting, as it doesn't penalize for model complexity.**
+
+**Cp Suggests 11 variables, balancing fit and complexity.**
+
+**BIC Strongly penalizes complexity and settles on a model with 6 predictors, emphasizing interpretability and avoiding overfitting.**
+
+**The predictors  selected by Cp are "PrivateYes","Apps","Accept","P.Undergrad" ,"Outstate" ,"Room.Board","Personal", "PhD","perc.alumni","Expend","EliteYes"**
+
+**From the variable selection process, based on the three criteria (Adjusted R-squared, Mallows' Cp, and BIC), I choose the model with 6 predictors(BIC) because, i want to have a model with more interpretability and simplicity.**
+
+**The predictors selected by BIC are "Apps","P.Undergrad","Outstate","Room.Board","Personal" and "perc.alumni"**
+
+**same as the result of linear regression "S.F.Ratio","Books","F.Undergrad","Accept","Enroll","Terminal" also are not chosen by exhaustive search**
+
+**However,  "PrivateYes","PhD" ,"S.F.Ratio","Expend" and "EliteYes" were not chosen by  exhaustive search perhaps they were selected by linear regression**
+
+
+
+```{r}
+# the next step will be Validate the BIC Model
+# Fit the linear regression model with selected predictors
+mlm_model.regsub.best = lm(Grad.Rate ~ Apps + P.Undergrad + Outstate + Room.Board + Personal + perc.alumni, data = mynewdata)
+
+# Show the summary of the model
+summary(mlm_model.regsub.best)
+
+
+```
+Answer:-
+**The multiple linear regression has a slightly lower RSE (12.77 compared to 12.93), suggesting that it fits the data slightly better than the second  model on average(selected by BIC), even though the difference is small.**
+
+**Adjusted R-squared penalizes the addition of unnecessary variables to the model. Despite the multiple linear regression having more predictors, it still has a higher adjusted R-squared (0.447 vs. 0.4329), indicating that the additional variables improve the model's fit without causing overfitting.**
+
+**The BIC selected model has a higher F-statistic (89.94), which indicates that the model with 6 predictors is statistically more significant than the multiple linear regression (F-statistic is equal to 36.31). However, both F-statistics have very small p-values (p-value less than 2.2e-16), which indicates that both models are statistically significant at any reasonable level.**
+
+**The multiple linear regression is a better model in terms of fit, as it explains more variance (higher R-squared and lower residual error). However, it uses more predictors.the BIC selected Model is simpler and more interpretable with fewer predictors.** 
+
+\textbf{Task 3: Open question (30$\%$)}
+
+Use mynewdata, discuss and perform any step(s) that you think that can improve the fitting in Task 2. You need to illustrate your work by using the R codes, output and discussion.  
+
+```{r, eval=TRUE}
+#Using polynomial regression can help improve the model by capturing non-linear relationships between the predictors and the outcome variable.so i use polynomial regression. 
+# Fit a model with quadratic terms (degree = 2)
+mlm_model_poly2 <- lm(Grad.Rate ~ poly(Apps, 2) + poly(P.Undergrad, 2) + poly(Outstate, 2) + poly(Room.Board, 2) + poly(Personal, 2) + poly(perc.alumni, 2), data = mynewdata)
+
+# Summarize the model
+summary(mlm_model_poly2)
+
+```
+Answer:-
+**The residual standard error (RSE) for the polynomial model is slightly lower (12.77 vs. 12.93), which suggests that the polynomial model fits the data slightly better in terms of the average error between observed and predicted values. This indicates that adding quadratic terms improved the model fit.**
+
+**The Adjusted R-squared is also higher for the polynomial model (0.447 vs. 0.4329), which accounts for the number of predictors in the model. The higher adjusted R-squared suggests that the addition of quadratic terms provides a better model fit without overfitting.**
+
+**However, the F-statistic for the linear model (89.94) is higher than that of the polynomial model (48.08), which suggests that the linear model is more significant when considering only the number of predictors. This might indicate that adding polynomial terms didn’t drastically improve the overall significance of the model, but it did provide a better fit in terms of R2.**
+
+**In summary, Polynomial Regression (Degree 2) appears to offer a slight improvement in model fit, as evidenced by the lower residual standard error and higher R-squared and Adjusted R-squared.The polynomial model explains more of the variance in Grad.Rate compared to the linear model.The linear model has a higher F-statistic, but the improvement from adding polynomial terms (degree 2) is still significant**
+
+```{r}
+# Check the model with poly of degree 4
+# Fit a model with polynomial terms of degree 4
+mlm_model_poly4 <- lm(Grad.Rate ~ poly(Apps, 4) + poly(P.Undergrad, 4) + poly(Outstate, 4) +  poly(Room.Board, 4) + poly(Personal, 4) + poly(perc.alumni, 4), data = mynewdata)
+
+# Summarize the model
+summary(mlm_model_poly4)
+
+```
+Answer:-
+**The residual standard error (RSE) for the 4th-degree polynomial model is the lowest among the models (12.57 vs. 12.93 for the linear model and 12.77 for the degree 2 polynomial model). This suggests that the degree 4 polynomial model fits the data better in terms of the average residual error, meaning it captures more variation in Grad.Rate than the linear model or the quadratic model.**
+
+**The Adjusted R-squared (which adjusts for the number of predictors) is also the highest for the 4th-degree polynomial model (0.4638), meaning that even though the model has more terms, it still provides a better fit without overfitting compared to the other models.**
+
+**The F-statistic for the polynomial model with degree 4 (26.19) is lower than that of the linear model (89.94) but still significant (p-value less than 2.2e-16). This indicates that while the polynomial model with degree 4 is statistically significant, it is not as strong in terms of overall model fit as the linear model (based on the F-statistic).The higher degrees of freedom (24 predictors in the degree 4 model vs. 6 in the linear model) also reflect the increased complexity of the model, but it still performs better in terms of fit.**
+
+**The residual degrees of freedom are slightly reduced as the polynomial degree increases because more parameters are being estimated. The degree 4 polynomial model uses 24 predictors, which is more than the linear model (6 predictors), leading to fewer residual degrees of freedom. This reflects the increased model complexity.**
+
+**Therefore based on the above result to achieve the best predictive  performance , the 4th-degree polynomial model is the best choice.for model simplicity and interpretability and are willing to accept a slight reduction in performance, the 2nd-degree polynomial model is a good compromise. If interpretability and model simplicity are crucial (e.g., for decision-making or communication), I will stick with the linear model despite it's lower performance.**
